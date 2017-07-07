@@ -58,9 +58,6 @@ module Unicorn::WorkerKiller
       @_worker_check_count += 1
       if @_worker_check_count % @_worker_check_cycle == 0
         rss = GetProcessMem.new.bytes
-        if configuration.log
-          logger.info "#{self}: worker (pid: #{Process.pid}) using #{rss} bytes." if @_verbose
-        end
         if rss > @_worker_memory_limit
           logger.warn "#{self}: worker (pid: #{Process.pid}) exceeds memory limit (#{rss} bytes > #{@_worker_memory_limit} bytes)"
           Unicorn::WorkerKiller.kill_self(logger, @_worker_process_start)
@@ -98,9 +95,6 @@ module Unicorn::WorkerKiller
       @_worker_process_start ||= Time.now
       @_worker_cur_requests ||= @_worker_max_requests_min + randomize(@_worker_max_requests_max - @_worker_max_requests_min + 1)
       @_worker_max_requests ||= @_worker_cur_requests
-      if configuration.log
-        logger.info "#{self}: worker (pid: #{Process.pid}) has #{@_worker_cur_requests} left before being killed" if @_verbose
-      end
 
       if (@_worker_cur_requests -= 1) <= 0
         logger.warn "#{self}: worker (pid: #{Process.pid}) exceeds max number of requests (limit: #{@_worker_max_requests})"
