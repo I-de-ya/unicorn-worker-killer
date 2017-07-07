@@ -23,9 +23,7 @@ module Unicorn::WorkerKiller
     sig = :TERM if @@kill_attempts > configuration.max_quit
     sig = :KILL if @@kill_attempts > configuration.max_term
 
-    if configuration.log
-      logger.warn "#{self} send SIG#{sig} (pid: #{worker_pid}) alive: #{alive_sec} sec (trial #{@@kill_attempts})"
-    end
+    logger.warn "#{self} send SIG#{sig} (pid: #{worker_pid}) alive: #{alive_sec} sec (trial #{@@kill_attempts})"
     Process.kill sig, worker_pid
   end
 
@@ -60,11 +58,11 @@ module Unicorn::WorkerKiller
       @_worker_check_count += 1
       if @_worker_check_count % @_worker_check_cycle == 0
         rss = GetProcessMem.new.bytes
-        logger.info "#{self}: worker (pid: #{Process.pid}) using #{rss} bytes." if @_verbose
+        if configuration.log
+          logger.info "#{self}: worker (pid: #{Process.pid}) using #{rss} bytes." if @_verbose
+        end
         if rss > @_worker_memory_limit
-          if configuration.log
-            logger.warn "#{self}: worker (pid: #{Process.pid}) exceeds memory limit (#{rss} bytes > #{@_worker_memory_limit} bytes)"
-          end
+          logger.warn "#{self}: worker (pid: #{Process.pid}) exceeds memory limit (#{rss} bytes > #{@_worker_memory_limit} bytes)"
           Unicorn::WorkerKiller.kill_self(logger, @_worker_process_start)
         end
         @_worker_check_count = 0
@@ -105,9 +103,7 @@ module Unicorn::WorkerKiller
       end
 
       if (@_worker_cur_requests -= 1) <= 0
-        if configuration.log
-          logger.warn "#{self}: worker (pid: #{Process.pid}) exceeds max number of requests (limit: #{@_worker_max_requests})"
-        end
+        logger.warn "#{self}: worker (pid: #{Process.pid}) exceeds max number of requests (limit: #{@_worker_max_requests})"
         Unicorn::WorkerKiller.kill_self(logger, @_worker_process_start)
       end
     end
